@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import { CacheOptions, Opts, getBuilder, getCacheMap, getMountArgsString, getTargetPath } from './opts.js';
+import {CacheOptions, Opts, getCacheMap, getMountArgsString, getTargetPath, getBuilder} from './opts.js';
 import { run } from './run.js';
 
 async function extractCache(cacheSource: string, cacheOptions: CacheOptions, scratchDir: string, containerImage: string, builder: string) {
@@ -19,15 +19,24 @@ FROM ${containerImage} AS dance-extract
 COPY buildstamp buildstamp
 RUN --mount=${mountArgs} \
     mkdir -p /var/dance-cache/ \
-    && cp -p -R ${targetPath}/. /var/dance-cache/ || true
+    && tar -czf /var/dance-cache/dance-cache.tar.gz -C ${targetPath} .
+
 FROM scratch
-COPY --from=dance-extract /var/dance-cache /
+COPY --from=dance-extract /var/dance-cache/dance-cache.tar.gz /dance-cache.tar.gz
 `;
     await fs.writeFile(path.join(scratchDir, 'Dancefile.extract'), dancefileContent);
     console.log(dancefileContent);
 
-    // Extract cache
-    await run('docker', ['buildx', 'build', '--builder', builder, '-f', path.join(scratchDir, 'Dancefile.extract'), '--tag', 'dance:extract', '--output', `type=local,dest=${cacheSource}`, scratchDir]);
+    // Extract Data
+    await run('docker', ['buildx', 'build', '--builder', builder, '-f', path.join(scratchDir, 'Dancefile.extract'), '--output', `type=local,dest=${scratchDir}` , scratchDir]);
+
+    // Unpack Cache Archive
+    await fs.mkdir(path.join(scratchDir, 'dance-cache'), { recursive: true });
+    await run('tar', ['-x', '-C', path.join(scratchDir, 'dance-cache'), '-f', path.join(scratchDir, 'dance-cache.tar.gz')]);
+
+    // Move Cache into Its Place
+    await run('sudo', ['rm', '-rf', cacheSource]);
+    await fs.rename(path.join(scratchDir, 'dance-cache'), cacheSource);
 }
 
 export async function extractCaches(opts: Opts) {
