@@ -12,7 +12,9 @@ export async function run(command: string, args: string[]) {
 
 export async function runPiped([command1, args1]: [string, string[]], [command2, args2]: [string, string[]]) {
     const cp1 = cp.spawn(command1, args1, { stdio: ['inherit', 'pipe', 'inherit'] });
-    const cp2 = cp.spawn(command2, args2, { stdio: [cp1.stdout, 'inherit', 'inherit'] });
+    const cp2 = cp.spawn(command2, args2, { stdio: ['pipe', 'inherit', 'inherit'] });
+
+    cp1.stdout.pipe(cp2.stdin);
 
     await Promise.all([assertSuccess(cp1), assertSuccess(cp2)]);
 }
