@@ -31,7 +31,6 @@ COPY --from=dance-extract /var/dance-cache/dance-cache.tar.gz /dance-cache.tar.g
     await run('docker', ['buildx', 'build', '--builder', builder, '-f', path.join(scratchDir, 'Dancefile.extract'), '--output', `type=local,dest=${scratchDir}` , scratchDir]);
 
     // Unpack Cache Archive
-    await run('sudo', ['rm', '-rf', path.join(scratchDir, 'dance-cache')]);
     await fs.mkdir(path.join(scratchDir, 'dance-cache'), { recursive: true });
     await run('tar', ['-x', '-C', path.join(scratchDir, 'dance-cache'), '-f', path.join(scratchDir, 'dance-cache.tar.gz')]);
 
