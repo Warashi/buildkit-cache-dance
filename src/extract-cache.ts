@@ -21,20 +21,19 @@ RUN --mount=${mountArgs} \
     mkdir -p /var/dance-cache/ \
     && cp -p -R ${targetPath}/. /var/dance-cache/ || true
 FROM scratch
-COPY --from=dance-extract /var/dance-cache /dance-cache
+COPY --from=dance-extract /var/dance-cache /
 `;
     await fs.writeFile(path.join(scratchDir, 'Dancefile.extract'), dancefileContent);
     console.log(dancefileContent);
 
+    // Clean Up Existing Cache Location
+    await run('sudo', ['rm', '-rf', cacheSource]);
+
     // Extract cache
     await runPiped(
         ['docker', ['buildx', 'build', '--builder', builder, '-f', path.join(scratchDir, 'Dancefile.extract'), '--output', `type=tar,dest=-`, scratchDir]],
-        ['tar', ['-H', 'posix', '-x', '-C', scratchDir]],
+        ['tar', ['-H', 'posix', '-x', '-C', cacheSource]],
     );
-
-    // Move Cache into Its Place
-    await run('sudo', ['rm', '-rf', cacheSource]);
-    await fs.rename(path.join(scratchDir, 'dance-cache'), cacheSource);
 }
 
 export async function extractCaches(opts: Opts) {
