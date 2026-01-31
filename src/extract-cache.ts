@@ -15,14 +15,14 @@ async function extractCache(cacheSource: string, cacheOptions: CacheOptions, scr
     const mountArgs = getMountArgsString(cacheOptions);
 
     const dancefileContent = `
-FROM ${containerImage} AS dance-extract
+FROM ${containerImage} AS extract
 COPY buildstamp buildstamp
 RUN --mount=${mountArgs} \
     mkdir -p /var/dance-cache/ \
-    && tar -czf /var/dance-cache/dance-cache.tar.gz -C ${targetPath}/. .
+    && tar -cz -f /var/dance-cache/dance-cache.tar.gz -C '${targetPath}/.' .
 
 FROM scratch
-COPY --from=dance-extract /var/dance-cache/dance-cache.tar.gz /dance-cache.tar.gz
+COPY --from=extract /var/dance-cache/dance-cache.tar.gz /dance-cache.tar.gz
 `;
     await fs.writeFile(path.join(scratchDir, 'Dancefile.extract'), dancefileContent);
     console.log(dancefileContent);
