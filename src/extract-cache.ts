@@ -21,7 +21,7 @@ RUN --mount=${mountArgs} \
     mkdir -p /var/dance-cache/ \
     && cp -p -R ${targetPath}/. /var/dance-cache/ || true
 FROM scratch
-COPY --from=dance-extract /var/dance-cache /
+COPY --from=dance-extract /var/dance-cache /dance-cache
 `;
     await fs.writeFile(path.join(scratchDir, 'Dancefile.extract'), dancefileContent);
     console.log(dancefileContent);
