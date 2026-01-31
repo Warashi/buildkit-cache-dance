@@ -19,7 +19,7 @@ FROM ${containerImage} AS dance-extract
 COPY buildstamp buildstamp
 RUN --mount=${mountArgs} \
     mkdir -p /var/dance-cache/ \
-    && tar -czf /var/dance-cache/dance-cache.tar.gz -C ${targetPath} .
+    && tar -czf /var/dance-cache/dance-cache.tar.gz -C ${targetPath}/. .
 
 FROM scratch
 COPY --from=dance-extract /var/dance-cache/dance-cache.tar.gz /dance-cache.tar.gz
@@ -29,10 +29,12 @@ COPY --from=dance-extract /var/dance-cache/dance-cache.tar.gz /dance-cache.tar.g
 
     // Extract Data
     await run('docker', ['buildx', 'build', '--builder', builder, '-f', path.join(scratchDir, 'Dancefile.extract'), '--output', `type=local,dest=${scratchDir}` , scratchDir]);
+    console.log(await fs.readdir(scratchDir));
 
     // Unpack Cache Archive
     await fs.mkdir(path.join(scratchDir, 'dance-cache'), { recursive: true });
     await run('tar', ['-x', '-C', path.join(scratchDir, 'dance-cache'), '-f', path.join(scratchDir, 'dance-cache.tar.gz')]);
+    console.log(await fs.readdir(path.join(scratchDir, 'dance-cache')));
 
     // Move Cache into Its Place
     await run('sudo', ['rm', '-rf', cacheSource]);
