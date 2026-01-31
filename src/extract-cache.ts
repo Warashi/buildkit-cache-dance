@@ -28,6 +28,7 @@ COPY --from=dance-extract /var/dance-cache /
 
     // Clean Up Existing Cache Location
     await run('sudo', ['rm', '-rf', cacheSource]);
+    await fs.mkdir(cacheSource, { recursive: true });
 
     // Extract cache
     await runPiped(
