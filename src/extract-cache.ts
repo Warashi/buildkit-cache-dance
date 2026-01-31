@@ -19,7 +19,7 @@ FROM ${containerImage} AS extract
 COPY buildstamp buildstamp
 RUN --mount=${mountArgs} \
     mkdir -p /var/dance-cache/ \
-    && cd '${targetPath}/.'
+    && cd '${targetPath}/.' \
     && tar -cz -f /var/dance-cache/dance-cache.tar.gz '.'
 
 FROM scratch
