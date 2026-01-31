@@ -30,7 +30,7 @@ FROM ${r} AS extract
 COPY buildstamp buildstamp
 RUN --mount=${d} \
     mkdir -p /var/dance-cache/ \
-    && tar -cz -f /var/dance-cache/dance-cache.tar.gz -C '${l}/.' .
+    && tar -cz -f /var/dance-cache/dance-cache.tar.gz -C '${l}/.' '${l}'
 
 FROM scratch
 COPY --from=extract /var/dance-cache/dance-cache.tar.gz /dance-cache.tar.gz
