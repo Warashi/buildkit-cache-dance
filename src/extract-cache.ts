@@ -15,31 +15,21 @@ async function extractCache(cacheSource: string, cacheOptions: CacheOptions, scr
     const mountArgs = getMountArgsString(cacheOptions);
 
     const dancefileContent = `
-FROM ${containerImage}
+FROM ${containerImage} AS dance-extract
 COPY buildstamp buildstamp
 RUN --mount=${mountArgs} \
     mkdir -p /var/dance-cache/ \
-    && cp -p -R ${targetPath}/. /var/dance-cache/ || true
+    && tar -cf /var/dance-cache/dance-cache.tar.gz -C ${targetPath} .
+
+FROM scratch
+COPY --from=dance-extract /var/dance-cache/dance-cache.tar.gz /dance-cache.tar.gz
 `;
     await fs.writeFile(path.join(scratchDir, 'Dancefile.extract'), dancefileContent);
     console.log(dancefileContent);
 
-    // Extract Data into Docker Image
-    await run('docker', ['buildx', 'build', '--builder', builder, '-f', path.join(scratchDir, 'Dancefile.extract'), '--tag', 'dance:extract', '--load', scratchDir]);
-
-    // Create Extraction Image
-    try {
-        await run('docker', ['rm', '-f', 'cache-container']);
-    } catch (error) {
-        // Ignore error if container does not exist
-    }
-    await run('docker', ['create', '-ti', '--name', 'cache-container', 'dance:extract']);
-
-    // Unpack Docker Image into Scratch
-    await runPiped(
-        ['docker', ['cp', '-L', 'cache-container:/var/dance-cache', '-']],
-        ['tar', ['-H', 'posix', '-x', '-C', scratchDir]]
-    );
+    // Extract Data
+    await run('docker', ['buildx', 'build', '--builder', builder, '-f', path.join(scratchDir, 'Dancefile.extract'), '--output', scratchDir , scratchDir]);
+    await run('tar', ['-H', 'posix', '-x', '-C', path.join(scratchDir, 'dance-cache'), '-f', path.join(scratchDir, 'dance-cache.tar.gz')]);
 
     // Move Cache into Its Place
     await run('sudo', ['rm', '-rf', cacheSource]);
