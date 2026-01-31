@@ -10,6 +10,7 @@ jobs:
     steps:
       - uses: docker/setup-docker-action@v4
       - uses: docker/setup-buildx-action@v3
+        id: setup-buildx
       - uses: actions/checkout@v4
       - uses: docker/metadata-action@v5
         id: meta
@@ -30,6 +31,7 @@ jobs:
       - name: inject cache into docker
         uses: ./
         with:
+          builder: ${{ steps.setup-buildx.outputs.name }}
           skip-extraction: false
           cache-map: |
             {
